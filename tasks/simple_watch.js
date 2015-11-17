@@ -1,3 +1,5 @@
+/*global module, require */
+
 /*
  * grunt
  * https://github.com/cowboy/grunt
@@ -16,11 +18,12 @@
  * http://benalman.com/about/license/
  */
 
-module.exports = function(grunt) {
-	"use strict";
+module.exports = function (grunt) {
+	'use strict';
 	// Nodejs libs.
-	var fs = require('fs');
-	var path = require('path');
+	var fs = require('fs'),
+		// path = require('path'),
+		mtimes;
 
 	// ==========================================================================
 	// TASKS
@@ -28,22 +31,33 @@ module.exports = function(grunt) {
 
 	// Keep track of last modified times of files, in case files are reported to
 	// have changed incorrectly.
-	var mtimes = {};
+	mtimes = {};
 
-	grunt.registerTask('simple-watch', 'Run predefined tasks whenever watched files change.', function(target) {
+	grunt.registerTask('simple-watch', 'Run predefined tasks whenever watched files change.', function (target) {
 		this.requiresConfig('watch');
 		// Build an array of files/tasks objects.
-		var watch = grunt.config('watch');
-		var targets = target ? [target] : Object.keys(watch).filter(function(key) {
-			return typeof watch[key] !== 'string' && !Array.isArray(watch[key]);
-		});
-		targets = targets.map(function(target) {
-			var name = target;
+		var watch = grunt.config('watch'),
+			targets = target ? [target] : Object.keys(watch).filter(function (key) {
+				return typeof watch[key] !== 'string' && !Array.isArray(watch[key]);
+			}),
+			taskDone,
+			patterns,
+			getFiles,
+			tasks,
+			nameArgs,
+			intervalId, // An ID by which the setInterval can be canceled.
+			watchedFiles,
+			changedFiles,
+			done;
+
+		targets = targets.map(function (target) {
+			var name = target,
+				targetData;
 			// Fail if any required config properties have been omitted.
 			target = ['watch', target];
 			this.requiresConfig(target.concat('files'), target.concat('tasks'));
-			var targetData = grunt.config(target);
-			targetData['name'] = name;
+			targetData = grunt.config(target);
+			targetData.name = name;
 			return targetData;
 		}, this);
 
@@ -52,40 +66,39 @@ module.exports = function(grunt) {
 			targets.push({files: watch.files, tasks: watch.tasks});
 		}
 
+		// grunt.log.writeln('Simple Watch, Waiting...');
 		grunt.log.writeln('Simple Watch, Waiting...');
 
 		// This task is asynchronous.
-		var taskDone = this.async();
+		taskDone = this.async();
 		// Get a list of files to be watched.
-		var patterns = grunt.util._.chain(targets).pluck('files').flatten().uniq().value();
-		var getFiles = grunt.file.expand.bind(grunt.file, patterns);
+		patterns = grunt.util._.chain(targets).pluck('files').flatten().uniq().value();
+		getFiles = grunt.file.expand.bind(grunt.file, patterns);
 
 		// The tasks to be run.
-		var tasks = []; //grunt.config(tasksProp);
+		tasks = []; //grunt.config(tasksProp);
 		// This task's name + optional args, in string format.
-		var nameArgs = this.nameArgs;
-		// An ID by which the setInterval can be canceled.
-		var intervalId;
+		nameArgs = this.nameArgs;
 		// Files that are being watched.
-		var watchedFiles = {};
+		watchedFiles = {};
 		// File changes to be logged.
-		var changedFiles = {};
+		changedFiles = {};
 
 		// Define an alternate fail "warn" behavior.
-		grunt.fail.warnAlternate = function() {
+		grunt.fail.warnAlternate = function () {
 			grunt.task.clearQueue({untilMarker: true}).run(nameArgs);
 		};
 
 		// Cleanup when files have changed. This is debounced to handle situations
 		// where editors save multiple files "simultaneously" and should wait until
 		// all the files are saved.
-		var done = grunt.util._.debounce(function() {
+		done = grunt.util._.debounce(function () {
 			// Clear the files-added setInterval.
 			clearInterval(intervalId);
 			// Ok!
 			grunt.log.ok();
 			var fileArray = Object.keys(changedFiles);
-			fileArray.forEach(function(filepath) {
+			fileArray.forEach(function (filepath) {
 				// Log which file has changed, and how.
 				grunt.log.ok('File "' + filepath + '" ' + changedFiles[filepath] + '.');
 				// Clear the modified file's cached require data.
@@ -96,9 +109,9 @@ module.exports = function(grunt) {
 			Object.keys(watchedFiles).forEach(unWatchFile);
 			// For each specified target, test to see if any files matching that
 			// target's file patterns were modified.
-			targets.forEach(function(target) {
-				var files = grunt.file.expand(target.files);
-				var intersection = grunt.util._.intersection(fileArray, files);
+			targets.forEach(function (target) {
+				var files = grunt.file.expand(target.files),
+					intersection = grunt.util._.intersection(fileArray, files);
 				// Enqueue specified tasks if a matching file was found.
 				if (intersection.length > 0 && target.tasks) {
 					grunt.task.run(target.tasks).mark();
@@ -121,12 +134,12 @@ module.exports = function(grunt) {
 			// Emit watch events if anyone is listening
 			if (grunt.event.listeners('watch').length > 0) {
 				var matchingTargets = [];
-				targets.forEach(function(target) {
+				targets.forEach(function (target) {
 					if (grunt.file.match(target.files, filepath).length > 0) {
 						matchingTargets.push(target.name);
 					}
 				});
-				matchingTargets.forEach(function(matchingTarget) {
+				matchingTargets.forEach(function (matchingTarget) {
 					grunt.event.emit('watch', status, filepath, matchingTarget);
 				});
 			}
@@ -160,17 +173,39 @@ module.exports = function(grunt) {
 			}
 		}
 
+		function rerun() {
+			// Clear queue and rerun to prevent failing
+			grunt.task.clearQueue();
+			grunt.task.run('simple-watch');
+		}
+
+		grunt.warn = grunt.fail.warn = function (e) {
+			var message = typeof e === 'string' ? e : e.message;
+			grunt.log.writeln(('Warning: ' + message).yellow);
+			if (!grunt.option('force')) {
+				rerun();
+			}
+		};
+
+		grunt.fatal = grunt.fail.fatal = function (e) {
+			var message = typeof e === 'string' ? e : e.message;
+			grunt.log.writeln(('Fatal error: ' + message).red);
+			rerun();
+		};
+
 		// Watch all currently existing files for changes.
 		getFiles().forEach(watchFile);
 
 		// Watch for files to be added.
-		intervalId = setInterval(function() {
-			var currFiles = getFiles();
-			var lastWatched = Object.keys(watchedFiles);
+		intervalId = setInterval(function () {
+			var currFiles = getFiles(),
+				lastWatched = Object.keys(watchedFiles),
+				added,
+				deleted;
 
 			// Files that have been added since last interval execution.
-			var added = grunt.util._.difference(currFiles, lastWatched);
-			added.forEach(function(filepath) {
+			added = grunt.util._.difference(currFiles, lastWatched);
+			added.forEach(function (filepath) {
 				// This file has been added.
 				fileChanged('added', filepath);
 				// Watch this file.
@@ -178,20 +213,22 @@ module.exports = function(grunt) {
 			});
 
 			// Files that have been deleted since last interval execution.
-			var deleted = grunt.util._.difference(lastWatched,currFiles);
-			deleted.forEach(function(filepath) {
+			deleted = grunt.util._.difference(lastWatched, currFiles);
+			deleted.forEach(function (filepath) {
 				// This file has been deleted.
 				fileChanged('deleted', filepath);
 				// UN-Watch this file.
 				unWatchFile(filepath);
 			});
 
-			currFiles.forEach(function(filepath){
+			currFiles.forEach(function (filepath) {
 				if (grunt.file.exists(filepath)) {
 					// Get last modified time of file.
 					var mtime = +fs.statSync(filepath).mtime;
 					// If same as stored mtime, the file hasn't changed.
-					if (mtime === mtimes[filepath]) { return; }
+					if (mtime === mtimes[filepath]) {
+						return;
+					}
 					// Otherwise it has, store mtime for later use.
 					mtimes[filepath] = mtime;
 					// the file has been changed
