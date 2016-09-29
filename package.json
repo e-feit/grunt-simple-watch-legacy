@@ -1,20 +1,17 @@
 {
-  "name": "grunt-simple-watch",
+  "name": "grunt-simple-watch-legacy",
   "title": "simple watch will watch your files without using fs.watch or fs.watchFile",
   "description": "no need to change your gruntfile configurations",
-  "version": "0.1.2",
-  "homepage": "https://github.com/unbalanced/grunt-simple-watch",
+  "version": "0.1.0",
+  "homepage": "https://github.com/e-feit/grunt-simple-watch-legacy",
   "author": {
-    "name": "Amir Souchami",
-    "email": "amir.souchami@gmail.com",
+    "name": "Eugen Feit",
+    "email": "eugen.feit@gmail.com",
     "url": ""
   },
   "repository": {
     "type": "git",
-    "url": "git://github.com/unbalanced/grunt-simple-watch.git"
-  },
-  "bugs": {
-    "url": "https://github.com/unbalanced/grunt-simple-watch/issues"
+    "url": "https://github.com/e-feit/grunt-simple-watch-legacy.git"
   },
   "licenses": [
     {
