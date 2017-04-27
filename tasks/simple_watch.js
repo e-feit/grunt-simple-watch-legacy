@@ -72,7 +72,7 @@ module.exports = function (grunt) {
 		// This task is asynchronous.
 		taskDone = this.async();
 		// Get a list of files to be watched.
-		patterns = _.chain(targets).pluck('files').flatten().uniq().value();
+		patterns = _.chain(targets).map('files').flatten().uniq().value();
 		getFiles = grunt.file.expand.bind(grunt.file, patterns);
 
 		// The tasks to be run.
