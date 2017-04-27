@@ -31,7 +31,7 @@ module.exports = function(grunt) {
 
 			globals: {}
 		}
-	})
+	});
 
 	grunt.loadNpmTasks('grunt-contrib-jshint');
 	grunt.loadNpmTasks('grunt-contrib-nodeunit');
@@ -39,4 +39,4 @@ module.exports = function(grunt) {
 
 	grunt.registerTask('default', ['jshint','watch']);
 
-}
+};
