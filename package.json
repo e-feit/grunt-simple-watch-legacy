@@ -2,7 +2,7 @@
   "name": "grunt-simple-watch-legacy",
   "title": "simple watch will watch your files without using fs.watch or fs.watchFile",
   "description": "no need to change your gruntfile configurations",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "homepage": "https://github.com/e-feit/grunt-simple-watch-legacy",
   "author": {
     "name": "Eugen Feit",
@@ -42,6 +42,6 @@
     "grunt-contrib-jshint": "~1.1.0",
     "grunt-contrib-nodeunit": "~1.0.0",
     "grunt-contrib-watch": "~1.0.0",
-    "lodash": "~4.17.4"
+    "lodash": "3.10.1"
   }
 }
