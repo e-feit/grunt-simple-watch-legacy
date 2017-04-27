@@ -20,10 +20,10 @@
 
 module.exports = function (grunt) {
 	'use strict';
+
 	// Nodejs libs.
-	var fs = require('fs'),
-		// path = require('path'),
-		mtimes;
+	var fs = require('fs');
+	var _ = require('lodash');
 
 	// ==========================================================================
 	// TASKS
@@ -31,7 +31,7 @@ module.exports = function (grunt) {
 
 	// Keep track of last modified times of files, in case files are reported to
 	// have changed incorrectly.
-	mtimes = {};
+	var mtimes = {};
 
 	grunt.registerTask('simple-watch', 'Run predefined tasks whenever watched files change.', function (target) {
 		this.requiresConfig('watch');
@@ -72,7 +72,7 @@ module.exports = function (grunt) {
 		// This task is asynchronous.
 		taskDone = this.async();
 		// Get a list of files to be watched.
-		patterns = grunt.util._.chain(targets).pluck('files').flatten().uniq().value();
+		patterns = _.chain(targets).pluck('files').flatten().uniq().value();
 		getFiles = grunt.file.expand.bind(grunt.file, patterns);
 
 		// The tasks to be run.
@@ -92,7 +92,7 @@ module.exports = function (grunt) {
 		// Cleanup when files have changed. This is debounced to handle situations
 		// where editors save multiple files "simultaneously" and should wait until
 		// all the files are saved.
-		done = grunt.util._.debounce(function () {
+		done = _.debounce(function () {
 			// Clear the files-added setInterval.
 			clearInterval(intervalId);
 			// Ok!
@@ -111,7 +111,7 @@ module.exports = function (grunt) {
 			// target's file patterns were modified.
 			targets.forEach(function (target) {
 				var files = grunt.file.expand(target.files),
-					intersection = grunt.util._.intersection(fileArray, files);
+					intersection = _.intersection(fileArray, files);
 				// Enqueue specified tasks if a matching file was found.
 				if (intersection.length > 0 && target.tasks) {
 					grunt.task.run(target.tasks).mark();
@@ -204,7 +204,7 @@ module.exports = function (grunt) {
 				deleted;
 
 			// Files that have been added since last interval execution.
-			added = grunt.util._.difference(currFiles, lastWatched);
+			added = _.difference(currFiles, lastWatched);
 			added.forEach(function (filepath) {
 				// This file has been added.
 				fileChanged('added', filepath);
@@ -213,7 +213,7 @@ module.exports = function (grunt) {
 			});
 
 			// Files that have been deleted since last interval execution.
-			deleted = grunt.util._.difference(lastWatched, currFiles);
+			deleted = _.difference(lastWatched, currFiles);
 			deleted.forEach(function (filepath) {
 				// This file has been deleted.
 				fileChanged('deleted', filepath);
